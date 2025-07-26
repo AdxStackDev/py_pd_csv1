@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <title>OI Date Compare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4">Compare OI Data</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="p-2 text-sm rounded text-white {% if category == 'error' %} bg-red-500 {% else %} bg-green-500 {% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form method="POST" class="space-y-4" target="_blank">
+            <label class="block">
+                <span class="text-gray-700">Select a Date (optional)</span>
+                <input type="date" name="date" class="mt-1 block w-full border border-gray-300 rounded p-2" />
+            </label>
+            <p class="text-sm text-gray-500">Leave empty to use yesterday vs today automatically.</p>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                Compare
+            </button>
+        </form>
+    </div>
+</body>
+</html>
