@@ -1,26 +1,28 @@
 
 ![OI Sentiment Chart](https://github.com/AdxStackDev/py_pd_csv1/blob/main/newplot.png?raw=true)
 
-# 📊 Python Data Analysis: Excel Reports + Market OI Sentiment
+# 📊 Python Data Analysis: NSE OI Sentiment + Excel Reports (Flask)
 
-This project demonstrates **two practical Python workflows** for data analysis and visualization:
+This project demonstrates **two practical Python workflows** for data analysis and visualization **with a simple Flask web app**.
 
 ---
 
-## ⚙️ 1️⃣ Market Open Interest Sentiment
+## ⚙️ 1️⃣ Market Open Interest Sentiment (with Flask UI)
 
 Analyze **daily Participant-wise Open Interest (OI)** data for equity derivatives and visualize how positions change between two days.
 
 ### 📌 How It Works
 
-- Download daily OI CSVs from [NSE India](https://www.nseindia.com/all-reports-derivatives).
-- The `market.py` script:
-  - Loads yesterday’s & today’s CSVs
-  - Merges by **Client Type**
+- Flask app (`oidata.py`):
+  - Lets you pick a date using a Tailwind CSS form.
+  - If no date is selected, it auto-downloads **yesterday & today** (adjusts for weekends & NSE holidays).
+  - Downloads daily OI CSVs from [NSE India](https://www.nseindia.com/all-reports-derivatives).
+  - Merges by **Client Type**.
   - Computes position differences:
     - Future Index Long
     - Option Index Call/Put Long & Short
-  - Plots an **interactive grouped bar chart** to visualize position changes.
+  - Plots an **interactive grouped bar chart** with Plotly.
+  - Opens the chart in a **new browser tab**.
 
 ### 🔗 Example NSE CSV URL  
 ```
@@ -60,13 +62,14 @@ The `app.py` script:
 ## 📦 Requirements
 
 - Python 3.x
+- Flask
 - pandas
 - plotly
 - matplotlib (optional)
 
 Install dependencies:
 ```bash
-pip install pandas plotly matplotlib
+pip install pandas plotly flask matplotlib
 ```
 
 ---
@@ -74,27 +77,27 @@ pip install pandas plotly matplotlib
 ## 🚀 How to Run
 
 ```bash
-# Run OI Sentiment script
-python market.py
+# Run OI Sentiment Flask app
+python oidata.py
 
-# Run Excel Product Sales script
+# OR: Run Excel Product Sales script
 python app.py
 ```
 
-Each script opens an **interactive Plotly bar chart** in your default browser.
+The **Flask app** lets you pick dates & shows the OI sentiment chart in your browser.
 
 ---
 
 ## 📂 Sample Data
 
 - `financial_sample.xlsx` — example product sales data.
-- `16072025.csv` / `17072025.csv` — example OI data (download from NSE).
+- `16072025.csv` / `17072025.csv` — example OI data (downloaded from NSE).
 
 ---
 
 ## 📄 License
 
-This project is for educational & personal analysis only.
+This project is for educational & personal analysis only.  
 Use freely and adapt for your own market or business data insights!
 
 ---
