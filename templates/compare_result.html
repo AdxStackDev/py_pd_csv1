@@ -1,35 +1,399 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Option Comparison Results</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Enable dark mode class strategy
-    tailwind.config = {
-      darkMode: 'class',
-    }
-  </script>
-</head>
-<body class="bg-white text-black transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
-  <h1>Option Comparison Tables & Graphs</h1>
-  <button id="dark-mode-toggle" class="fixed top-4 right-4 px-4 py-2 bg-gray-800 text-white rounded">
-    Toggle Dark Mode
-  </button>  
-<div class="space-y-8">  
-<a href="{{ pdf_url }}" download class="btn btn-primary">Download Full PDF Report</a>
-<iframe src="{{ url_for('static', filename='options_compare.html') }}" width="100%" height="400"></iframe>
-<iframe src="{{ url_for('static', filename='call_put_diff.html') }}" width="100%" height="400"></iframe>
-<iframe src="{{ url_for('static', filename='call_put_diff_table.html') }}" width="100%" height="400"></iframe>
-<iframe src="{{ url_for('static', filename='call_put_diff_bars.html') }}" width="100%" height="500"></iframe>
+{% extends "base.html" %}
+
+{% block title %}Compare Analysis - NSE Analytics{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  .analysis-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .analysis-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(59, 130, 246, 0.2);
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+  }
+
+  .explanation-box {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid #3b82f6;
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+  }
+
+  .explanation-box.green {
+    background: rgba(16, 185, 129, 0.1);
+    border-left-color: #10b981;
+  }
+
+  .explanation-box.amber {
+    background: rgba(245, 158, 11, 0.1);
+    border-left-color: #f59e0b;
+  }
+
+  .futures-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .futures-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15);
+  }
+
+  .progress-bar-container {
+    background: #0f172a;
+    height: 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #334155;
+  }
+
+  .progress-segment {
+    height: 100%;
+    display: inline-block;
+    transition: width 0.6s ease;
+  }
+
+  .progress-segment.long {
+    background: linear-gradient(90deg, #10b981, #059669);
+  }
+
+  .progress-segment.short {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .badge-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid #10b981;
+  }
+
+  .badge-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+  }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+  <!-- Header -->
+  <div class="analysis-card">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-4xl font-bold text-white mb-2">📊 Market Analysis Dashboard</h1>
+        <p class="text-gray-400 text-lg">Focused Participant Positioning & Sentiment Analysis</p>
+      </div>
+      <a href="{{ url_for('compare') }}"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        New Analysis
+      </a>
+    </div>
+  </div>
+
+  <!-- Section 1: NSE Participant Data Overview -->
+  <section class="analysis-card">
+    <h2 class="section-title">📋 NSE Participant Data Overview</h2>
+    <p class="text-gray-300 mb-4">Daily change analysis comparing current vs previous trading day positions</p>
+
+    <div class="bg-gray-900/50 rounded-lg p-4">
+      <iframe src="{{ url_for('static', filename=charts['overview_table']) }}"
+        class="w-full h-[750px] border-0 rounded-lg"></iframe>
+    </div>
+
+    <div class="explanation-box">
+      <h4 class="font-bold text-blue-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        What This Shows
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        This table displays <strong>day-over-day changes</strong> in participant positions across Index and Stock
+        futures.
+        <span class="text-green-400">Green values</span> indicate increased long positions (bullish), while
+        <span class="text-red-400">red values</span> show increased short positions (bearish).
+        <strong>FII (Foreign Institutional Investors)</strong> movements are considered the most significant market
+        indicators.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 2: Nifty 50 vs FII Sentiment -->
+  <section class="analysis-card">
+    <h2 class="section-title">📈 Nifty 50 vs FII Futures Sentiment</h2>
+    <p class="text-gray-300 mb-4">Correlation between Nifty 50 index movement and FII short positioning</p>
+
+    <div class="bg-gray-900/50 rounded-lg p-4">
+      <iframe src="{{ url_for('static', filename=charts['nifty_sentiment']) }}"
+        class="w-full h-[500px] border-0 rounded-lg"></iframe>
+    </div>
+
+    <div class="explanation-box green">
+      <h4 class="font-bold text-green-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        How to Interpret
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        The <strong class="text-blue-400">blue line</strong> shows Nifty 50 price movement, while the
+        <strong class="text-green-400">green area</strong> represents FII short percentage in index futures.
+        When FII short % is <strong>high (above 60%)</strong>, it indicates bearish sentiment from smart money.
+        Conversely, <strong>low short % (below 40%)</strong> suggests bullish positioning. Watch for divergences between
+        price and positioning.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 3: Participant Net Options Analysis -->
+  <section class="analysis-card">
+    <h2 class="section-title">🎯 Participant Net Options Analysis</h2>
+    <p class="text-gray-300 mb-4">Net Call and Put positions for each market participant</p>
+
+    <div class="bg-gray-900/50 rounded-lg p-4">
+      <iframe src="{{ url_for('static', filename=charts['options_analysis']) }}"
+        class="w-full h-[650px] border-0 rounded-lg"></iframe>
+    </div>
+
+    <div class="explanation-box amber">
+      <h4 class="font-bold text-amber-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1 a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Trading Signals
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        <strong>Net Calls (Long - Short)</strong>: Positive values indicate bullish bets.
+        <strong>Net Puts (Long - Short)</strong>: Positive values suggest bearish hedging.
+        <span class="text-green-400">Green bars</span> = Net buying, <span class="text-red-400">Red bars</span> = Net
+        selling.
+        When <strong>FII and PRO</strong> align on the same side, it's a strong directional signal.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 4: Futures Positioning Cards -->
+  <section class="analysis-card">
+    <h2 class="section-title">🔥 Participant Futures Positioning</h2>
+    <p class="text-gray-300 mb-4">Long vs Short positioning breakdown with daily changes</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for item in charts['futures_data'] %}
+      <div class="futures-card">
+        <h3 class="text-2xl font-bold text-white mb-4">{{ item.participant }}</h3>
+
+        <!-- Index Futures -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-400 font-semibold">Index Futures</span>
+            {% if item.index_futures.net_change > 0 %}
+            <span class="badge badge-success">
+              ▲ +{{ "{:,}".format(item.index_futures.net_change) }}
+            </span>
+            {% else %}
+            <span class="badge badge-danger">
+              ▼ {{ "{:,}".format(item.index_futures.net_change) }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="progress-bar-container mb-2">
+            <div class="progress-segment long" style="width: {{ item.index_futures.long_pct }}%"></div>
+            <div class="progress-segment short" style="width: {{ item.index_futures.short_pct }}%"></div>
+          </div>
+
+          <div class="flex justify-between text-sm">
+            <span class="text-green-400">
+              <strong>{{ item.index_futures.long_pct }}%</strong> Long
+              <span class="text-gray-500">({{ "{:,}".format(item.index_futures.longs) }})</span>
+            </span>
+            <span class="text-red-400">
+              <strong>{{ item.index_futures.short_pct }}%</strong> Short
+              <span class="text-gray-500">({{ "{:,}".format(item.index_futures.shorts) }})</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Stock Futures -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-400 font-semibold">Stock Futures</span>
+            {% if item.stock_futures.net_change > 0 %}
+            <span class="badge badge-success">
+              ▲ +{{ "{:,}".format(item.stock_futures.net_change) }}
+            </span>
+            {% else %}
+            <span class="badge badge-danger">
+              ▼ {{ "{:,}".format(item.stock_futures.net_change) }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="progress-bar-container mb-2">
+            <div class="progress-segment long" style="width: {{ item.stock_futures.long_pct }}%"></div>
+            <div class="progress-segment short" style="width: {{ item.stock_futures.short_pct }}%"></div>
+          </div>
+
+          <div class="flex justify-between text-sm">
+            <span class="text-green-400">
+              <strong>{{ item.stock_futures.long_pct }}%</strong> Long
+              <span class="text-gray-500">({{ "{:,}".format(item.stock_futures.longs) }})</span>
+            </span>
+            <span class="text-red-400">
+              <strong>{{ item.stock_futures.short_pct }}%</strong> Short
+              <span class="text-gray-500">({{ "{:,}".format(item.stock_futures.shorts) }})</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="explanation-box mt-6">
+      <h4 class="font-bold text-blue-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Position Intensity Guide
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        Progress bars show the <strong>Long/Short ratio</strong> for each participant.
+        <span class="text-green-400">Green (Long)</span> indicates bullish positioning,
+        <span class="text-red-400">Red (Short)</span> indicates bearish positioning.
+        The <strong>net change badge</strong> shows day-over-day movement:
+        <span class="text-green-400">▲ Green = Increased longs</span>,
+        <span class="text-red-400">▼ Red = Increased shorts</span>.
+        Watch for <strong>extreme imbalances (>70% one side)</strong> as potential reversal signals.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 5: Call-Put Sentiment -->
+  <section class="analysis-card">
+    <h2 class="section-title">⚖️ Call-Put Difference (Sentiment)</h2>
+    <p class="text-gray-300 mb-4">Net sentiment derived from call and put option positioning</p>
+
+    <div class="bg-gray-900/50 rounded-lg p-4">
+      <iframe src="{{ url_for('static', filename=charts['sentiment_hbar']) }}"
+        class="w-full h-[450px] border-0 rounded-lg"></iframe>
+    </div>
+
+    <div class="explanation-box green">
+      <h4 class="font-bold text-green-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Sentiment Analysis
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        This chart shows <strong>Net Sentiment = (Net Calls) - (Net Puts)</strong>.
+        <span class="text-green-400">Positive values (right side)</span> indicate <strong>bullish sentiment</strong>
+        (more call buying than put buying).
+        <span class="text-red-400">Negative values (left side)</span> indicate <strong>bearish sentiment</strong>.
+        The zero line represents neutral positioning. <strong>FII sentiment</strong> is the most reliable indicator for
+        market direction.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 6: Position Intensity Heatmap -->
+  <section class="analysis-card">
+    <h2 class="section-title">🌡️ Position Intensity Heatmap</h2>
+    <p class="text-gray-300 mb-4">Concentration of participant positions across Index and Options</p>
+
+    <div class="bg-gray-900/50 rounded-lg p-4">
+      <iframe src="{{ url_for('static', filename=charts['position_heat']) }}"
+        class="w-full h-[500px] border-0 rounded-lg"></iframe>
+    </div>
+
+    <div class="explanation-box amber">
+      <h4 class="font-bold text-amber-300 flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Heatmap Insights
+      </h4>
+      <p class="text-gray-300 text-sm leading-relaxed">
+        <strong>Darker colors</strong> indicate higher open interest concentration.
+        Compare across rows to see which participants dominate different positions.
+        Compare across columns to identify where overall market interest is concentrated.
+        High values in <strong>Future Index Long</strong> + <strong>Option Call Long</strong> = Strong bullish setup.
+        High values in <strong>Future Index Short</strong> + <strong>Option Put Long</strong> = Strong bearish setup.
+      </p>
+    </div>
+  </section>
 
 </div>
 
-  <script>
-    const toggleBtn = document.getElementById('dark-mode-toggle');
-    toggleBtn.addEventListener('click', () => {
-      document.documentElement.classList.toggle('dark');
+<script>
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
     });
-  </script>
+  });
 
-</body>
-</html>
+  // Fade-in animation
+  const cards = document.querySelectorAll('.analysis-card');
+  cards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 100);
+  });
+</script>
+
+{% endblock %}

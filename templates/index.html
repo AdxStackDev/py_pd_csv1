@@ -1,35 +1,154 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
-<head>
-    <meta charset="UTF-8">
-    <title>OI Date Compare</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="h-full flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-4">Compare OI Data</h1>
-        <a href="/compare">Excel View</a>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mb-4">
-                    {% for category, message in messages %}
-                        <div class="p-2 text-sm rounded text-white {% if category == 'error' %} bg-red-500 {% else %} bg-green-500 {% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NSE Analytics{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Market Dashboard</h2>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Analyze Open Interest data for Nifty & BankNifty</p>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {% if activity_data %}
+            <!-- FII DII Activity Table -->
+            <div
+                class="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="bg-black text-white text-center py-2 font-bold text-lg uppercase">
+                    {{ activity_data.date }} - FII DII FNO ACTIVITY
                 </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead
+                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b dark:border-gray-600">
+                            <tr>
+                                <th class="px-4 py-2 border-r dark:border-gray-600">Participant</th>
+                                <th class="px-4 py-2 border-r dark:border-gray-600">Instrument</th>
+                                <th class="px-4 py-2 border-r dark:border-gray-600 text-right">Change</th>
+                                <th class="px-4 py-2 border-r dark:border-gray-600">Activity</th>
+                                <th class="px-4 py-2">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participant in activity_data.data %}
+                            {% for row in participant.rows %}
+                            <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                {% if loop.first %}
+                                <td rowspan="3"
+                                    class="px-4 py-2 font-bold text-gray-900 dark:text-white border-r dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-center align-middle">
+                                    {{ participant.name }}
+                                </td>
+                                {% endif %}
+                                <td class="px-4 py-2 border-r dark:border-gray-600 font-medium">{{ row.instrument }}
+                                </td>
+                                <td class="px-4 py-2 border-r dark:border-gray-600 text-right font-mono">{{ row.change
+                                    }}</td>
+                                <td
+                                    class="px-4 py-2 border-r dark:border-gray-600 
+                                        {% if row.color == 'green' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                                    {{ row.activity }}
+                                </td>
+                                <td class="px-4 py-2 font-bold text-white 
+                                        {% if row.color == 'green' %}bg-green-500{% else %}bg-red-500{% endif %}">
+                                    {{ row.trend }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="px-4 py-3 font-bold text-right text-white bg-black">OVERALL
+                                    TREND:</td>
+                                <td
+                                    class="px-4 py-3 font-bold text-center text-white uppercase
+                                    {% if activity_data.overall_color == 'green' %}bg-green-600{% elif activity_data.overall_color == 'red' %}bg-red-600{% else %}bg-gray-600{% endif %}">
+                                    {{ activity_data.overall_trend }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
             {% endif %}
-        {% endwith %}
-        <form method="POST" class="space-y-4" target="_blank">
-            <label class="block">
-                <span class="text-gray-700">Select a Date (optional)</span>
-                <input type="date" name="date" class="mt-1 block w-full border border-gray-300 rounded p-2" />
-            </label>
-            <p class="text-sm text-gray-500">Leave empty to use yesterday vs today automatically.</p>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                Compare
-            </button>
-        </form>
+            <!-- Download & Analyze Card -->
+            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                        </path>
+                    </svg>
+                    Analyze Historical Data
+                </h3>
+                <form method="POST" action="{{ url_for('compare') }}" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select
+                            Date</label>
+                        <input type="date" name="date"
+                            class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to compare Yesterday vs
+                            Today</p>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                        Generate Report
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Links Card -->
+            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Quick Actions
+                </h3>
+                <div class="space-y-3">
+                    <a href="{{ url_for('option_chain_view') }}"
+                        class="block w-full text-center bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-md border border-gray-300 dark:border-gray-600 transition-colors">
+                        Live Option Chain
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+    {% if charts %}
+    <!-- Step 8: Latest Market Snapshot (Auto-Loaded) -->
+    <div class="mt-8">
+        <div class="flex items-center mb-4">
+            <span
+                class="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-green-900">Latest</span>
+            <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Market Snapshot</h3>
+        </div>
+
+        <!-- Tables Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <iframe src="{{ url_for('static', filename=charts['step8_table1']) }}"
+                    class="w-full h-[350px] border-0"></iframe>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <iframe src="{{ url_for('static', filename=charts['step8_table2']) }}"
+                    class="w-full h-[350px] border-0"></iframe>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <iframe src="{{ url_for('static', filename=charts['step8_charts']) }}"
+                class="w-full h-[450px] border-0"></iframe>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

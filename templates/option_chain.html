@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Option Chain - NSE Analytics{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">NIFTY Option Chain</h2>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">Live data for nearest 2 expiries</p>
+                {% if spot_price %}
+                <div class="mt-2 flex items-center">
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400 mr-2">Spot Price:</span>
+                    <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ "%.2f"|format(spot_price)
+                        }}</span>
+                    {% if atm_strike %}
+                    <span class="ml-4 text-sm font-medium text-gray-600 dark:text-gray-400 mr-2">ATM Strike:</span>
+                    <span class="text-lg font-bold text-green-600 dark:text-green-400">{{ atm_strike }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <button onclick="location.reload()"
+                class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-center border-r dark:border-gray-600">Calls (CE)</th>
+                        <th scope="col" class="px-6 py-3 text-center border-r dark:border-gray-600">Strike</th>
+                        <th scope="col" class="px-6 py-3 text-center">Puts (PE)</th>
+                    </tr>
+                </thead>
+            </table>
+            <div id="optionTableContainer" class="max-h-[calc(100vh-250px)] overflow-y-auto">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead
+                        class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2 text-right">OI</th>
+                            <th class="px-4 py-2 text-right">Chg OI</th>
+                            <th
+                                class="px-4 py-2 text-center font-bold text-gray-900 dark:text-white border-l border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
+                                Strike Price</th>
+                            <th class="px-4 py-2 text-right">Chg OI</th>
+                            <th class="px-4 py-2 text-right">OI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr id="strike-{{ row['strikePrice'] }}"
+                            class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                            {% if atm_strike and row['strikePrice'] == atm_strike %}atm-strike bg-yellow-50 dark:bg-yellow-900/20{% endif %}">
+                            <!-- CALLS -->
+                            <td class="px-4 py-2 text-right font-mono">{{ row['CE']['openInterest'] }}</td>
+                            <td
+                                class="px-4 py-2 text-right font-mono font-medium {% if row['CE']['changeinOpenInterest'] > 0 %}text-green-600 dark:text-green-400{% elif row['CE']['changeinOpenInterest'] < 0 %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ row['CE']['changeinOpenInterest'] }}
+                            </td>
+
+                            <!-- STRIKE -->
+                            <td class="px-4 py-2 text-center font-bold border-l border-r dark:border-gray-600
+                                {% if atm_strike and row['strikePrice'] == atm_strike %}
+                                    text-yellow-900 dark:text-yellow-200 bg-yellow-100 dark:bg-yellow-900/40 text-lg
+                                {% else %}
+                                    text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50
+                                {% endif %}">
+                                {{ row['strikePrice'] }}
+                                {% if atm_strike and row['strikePrice'] == atm_strike %}
+                                <span class="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded">ATM</span>
+                                {% endif %}
+                                <span class="block text-[10px] text-gray-400 font-normal">{{ row['expiryDate'] }}</span>
+                            </td>
+
+                            <!-- PUTS -->
+                            <td
+                                class="px-4 py-2 text-right font-mono font-medium {% if row['PE']['changeinOpenInterest'] > 0 %}text-green-600 dark:text-green-400{% elif row['PE']['changeinOpenInterest'] < 0 %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ row['PE']['changeinOpenInterest'] }}
+                            </td>
+                            <td class="px-4 py-2 text-right font-mono">{{ row['PE']['openInterest'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Pass Jinja2 variables to JavaScript
+    const atmStrike = {{ atm_strike if atm_strike else 'null' }};
+
+    // Auto-scroll to ATM strike on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        if (atmStrike) {
+            const atmRow = document.getElementById('strike-' + atmStrike);
+            if (atmRow) {
+                const container = document.getElementById('optionTableContainer');
+                // Calculate position to center the ATM strike
+                const rowTop = atmRow.offsetTop;
+                const containerHeight = container.clientHeight;
+                const rowHeight = atmRow.clientHeight;
+
+                // Scroll to center the ATM strike
+                container.scrollTop = rowTop - (containerHeight / 2) + (rowHeight / 2);
+
+                // Add a subtle animation to draw attention
+                atmRow.style.transition = 'all 0.3s ease';
+                setTimeout(() => {
+                    atmRow.style.transform = 'scale(1.02)';
+                    setTimeout(() => {
+                        atmRow.style.transform = 'scale(1)';
+                    }, 300);
+                }, 100);
+            }
+        }
+    });
+
+    // Optional: Auto-refresh every 30 seconds during market hours
+    // Uncomment if you want automatic refresh
+
+    setInterval(function () {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const day = now.getDay();
+
+        // Check if it's a weekday (Mon-Fri) and during market hours (9:15 AM - 3:30 PM)
+        if (day >= 1 && day <= 5) {
+            const currentTime = hours * 60 + minutes;
+            const marketOpen = 9 * 60 + 15;  // 9:15 AM
+            const marketClose = 15 * 60 + 30; // 3:30 PM
+
+            if (currentTime >= marketOpen && currentTime <= marketClose) {
+                location.reload();
+            }
+        }
+    }, 30000); // 30 seconds
+
+</script>
+
+<style>
+    /* Smooth scrolling for the container */
+    #optionTableContainer {
+        scroll-behavior: smooth;
+    }
+
+    /* Enhanced ATM strike styling */
+    .atm-strike {
+        border-left: 3px solid #eab308 !important;
+        border-right: 3px solid #eab308 !important;
+    }
+
+    /* Pulse animation for ATM strike (optional) */
+    @keyframes pulse-yellow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 0 0 4px rgba(234, 179, 8, 0);
+        }
+    }
+
+    .atm-strike:hover {
+        animation: pulse-yellow 1.5s infinite;
+    }
+</style>
+{% endblock %}
