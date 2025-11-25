@@ -16,11 +16,11 @@ import optionchain
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_123")
 
-# Configure logging
+# Configure logging (StreamHandler only for Vercel compatibility)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] - %(message)s",
-    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()]
+    handlers=[logging.StreamHandler()]
 )
 
 # ====================================================
