@@ -166,33 +166,28 @@
 </div>
 
 <script>
-    // Pass Jinja2 variables to JavaScript
-    const atmStrike = {{ atm_strike if atm_strike else 'null' }};
-
-    // Auto-scroll to ATM strike on page load
     document.addEventListener('DOMContentLoaded', function () {
-        if (atmStrike) {
-            // Find the first row with ATM strike
-            const atmRow = document.getElementById('strike-' + atmStrike);
-            if (atmRow) {
-                const container = document.getElementById('optionTableContainer');
-                // Calculate position to center the ATM strike
-                const rowTop = atmRow.offsetTop;
-                const containerHeight = container.clientHeight;
-                const rowHeight = atmRow.clientHeight;
+        // Scroll to ATM strike on page load
+        const atmRow = document.querySelector('.atm-strike');
 
-                // Scroll to center the ATM strike
-                container.scrollTop = rowTop - (containerHeight / 2) + (rowHeight / 2);
+        if (atmRow) {
+            const container = document.getElementById('optionTableContainer');
+            // Calculate position to center the ATM strike
+            const rowTop = atmRow.offsetTop;
+            const containerHeight = container.clientHeight;
+            const rowHeight = atmRow.clientHeight;
 
-                // Add a subtle animation to draw attention
-                atmRow.style.transition = 'all 0.3s ease';
+            // Scroll to center the ATM strike
+            container.scrollTop = rowTop - (containerHeight / 2) + (rowHeight / 2);
+
+            // Add a subtle animation to draw attention
+            atmRow.style.transition = 'all 0.3s ease';
+            setTimeout(() => {
+                atmRow.style.transform = 'scale(1.02)';
                 setTimeout(() => {
-                    atmRow.style.transform = 'scale(1.02)';
-                    setTimeout(() => {
-                        atmRow.style.transform = 'scale(1)';
-                    }, 300);
-                }, 100);
-            }
+                    atmRow.style.transform = 'scale(1)';
+                }, 300);
+            }, 100);
         }
     });
 
@@ -214,7 +209,6 @@
             }
         }
     }, 30000); // 30 seconds
-
 </script>
 
 <style>
@@ -246,4 +240,8 @@
         animation: pulse-yellow 1.5s infinite;
     }
 </style>
+
+<!-- Disclaimer -->
+{% include 'disclaimer.html' %}
+
 {% endblock %}
