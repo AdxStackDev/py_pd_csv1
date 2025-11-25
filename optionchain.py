@@ -1,60 +1,133 @@
 import requests
-from tabulate import tabulate
+import logging
+import json
+import os
 
-NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
-HOME_URL = "https://www.nseindia.com"
+NSE_OPTION_CHAIN_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+NSE_HOME_URL = "https://www.nseindia.com"
+DATA_FILE = "data/option_chain_state.json"
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "https://www.nseindia.com/option-chain"
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Accept": "application/json",
+    "Connection": "keep-alive",
+    "Host": "www.nseindia.com"
 }
 
+def load_previous_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            logging.error(f"Error loading previous data: {e}")
+    return {}
 
+def save_current_data(data):
+    try:
+        os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        logging.error(f"Error saving current data: {e}")
 
-session = requests.Session()
-session.headers.update(HEADERS)
+def fetch_raw_data():
+    session = requests.Session()
+    session.headers.update(headers)
+    try:
+        # Visit home page to set cookies
+        session.get(NSE_HOME_URL, timeout=10)
+        # Fetch option chain data
+        resp = session.get(NSE_OPTION_CHAIN_URL, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        logging.error(f"Error fetching option chain: {e}")
+        return None
 
-def fetch_option_chain():
-    """Fetch option chain JSON from NSE with proper session"""
-    # Step 1: Visit home page to set cookies
-    session.get(HOME_URL, timeout=10)
+def get_option_chain_data():
+    raw_data = fetch_raw_data()
+    previous_data = load_previous_data()
+    
+    if not raw_data:
+        return [], 0, None
 
-    # Step 2: Now hit the API
-    resp = session.get(NSE_URL, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+    records = raw_data.get("records", {})
+    spot_price = records.get("underlyingValue", 0)
+    
+    # The PHP script iterates over $optionChainData['filtered']['data']
+    # In Python, this corresponds to raw_data['filtered']['data']
+    filtered_data = raw_data.get("filtered", {}).get("data", [])
+    
+    if not filtered_data:
+        return [], spot_price, None
 
-def filter_two_expiries(data):
-    """Keep only two nearest expiry dates"""
-    expiry_dates = data["records"]["expiryDates"][:2]   # first two expiries
-    filtered = [item for item in data["records"]["data"] if item.get("expiryDate") in expiry_dates]
-    return expiry_dates, filtered
+    atm_strike = int(round(spot_price / 50) * 50) if spot_price else None
 
-def display_table(expiry_dates, filtered):
-    """Show option chain in table format"""
-    table = []
-    for row in filtered:
-        strike = row["strikePrice"]
-        expiry = row["expiryDate"]
+    processed_rows = []
+    new_session_data = previous_data.copy() # Start with existing data to preserve other strikes if needed
 
-        ce_oi = row.get("CE", {}).get("openInterest", "-")
-        pe_oi = row.get("PE", {}).get("openInterest", "-")
+    for item in filtered_data:
+        strike = item["strikePrice"]
+        expiry = item["expiryDate"]
+        
+        # Extract current values
+        # PHP: $data['CE']['openInterest'] etc.
+        ce = item.get("CE", {})
+        pe = item.get("PE", {})
+        
+        curr_ce = {
+            "OI": ce.get("openInterest", 0),
+            "ChangeInOI": ce.get("changeinOpenInterest", 0),
+            "Volume": ce.get("totalTradedVolume", 0),
+            "IV": ce.get("impliedVolatility", 0),
+            "LTP": ce.get("lastPrice", 0)
+        }
+        
+        curr_pe = {
+            "OI": pe.get("openInterest", 0),
+            "ChangeInOI": pe.get("changeinOpenInterest", 0),
+            "Volume": pe.get("totalTradedVolume", 0),
+            "IV": pe.get("impliedVolatility", 0),
+            "LTP": pe.get("lastPrice", 0)
+        }
 
-        ce_chg = row.get("CE", {}).get("changeinOpenInterest", "-")
-        pe_chg = row.get("PE", {}).get("changeinOpenInterest", "-")
+        # Get previous values (Keyed by Strike)
+        # PHP: $previousCE = $_SESSION['previousData'][$strikePrice]['CE'] ?? ...
+        prev_item = previous_data.get(str(strike), {}) 
+        prev_ce = prev_item.get("CE", {"OI": 0, "ChangeInOI": 0, "Volume": 0})
+        prev_pe = prev_item.get("PE", {"OI": 0, "ChangeInOI": 0, "Volume": 0})
 
-        table.append([expiry, strike, ce_oi, ce_chg, pe_oi, pe_chg])
+        # Calculate Diffs
+        # PHP: $diffCE['OI'] = $currentCE['OI'] - $previousCE['OI']
+        diff_ce = {
+            "OI": curr_ce["OI"] - prev_ce.get("OI", 0),
+            "ChangeInOI": curr_ce["ChangeInOI"] - prev_ce.get("ChangeInOI", 0),
+            "Volume": curr_ce["Volume"] - prev_ce.get("Volume", 0)
+        }
+        
+        diff_pe = {
+            "OI": curr_pe["OI"] - prev_pe.get("OI", 0),
+            "ChangeInOI": curr_pe["ChangeInOI"] - prev_pe.get("ChangeInOI", 0),
+            "Volume": curr_pe["Volume"] - prev_pe.get("Volume", 0)
+        }
 
-    print("\nOption Chain (First 2 Expiries)")
-    print(tabulate(table, headers=["Expiry", "Strike", "CE_OI", "ΔCE_OI", "PE_OI", "ΔPE_OI"], tablefmt="pretty"))
+        row_data = {
+            "strikePrice": strike,
+            "expiryDate": expiry,
+            "CE": curr_ce,
+            "PE": curr_pe,
+            "diffCE": diff_ce,
+            "diffPE": diff_pe
+        }
+        
+        processed_rows.append(row_data)
+        
+        # Store for next session
+        # PHP: $_SESSION['previousData'][$strikePrice] = ...
+        new_session_data[str(strike)] = {"CE": curr_ce, "PE": curr_pe}
 
-def main():
-    data = fetch_option_chain()
-    expiry_dates, filtered = filter_two_expiries(data)
-    display_table(expiry_dates, filtered)
+    # Save current data as previous data for next time
+    save_current_data(new_session_data)
 
-if __name__ == "__main__":
-    main()
+    return processed_rows, spot_price, atm_strike

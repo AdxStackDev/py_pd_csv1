@@ -80,16 +80,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('compare') }}"
-                            class="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {% if request.endpoint == 'compare' %}bg-blue-50 dark:bg-gray-700 text-blue-700 dark:text-blue-300{% endif %}">
-                            <svg class="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Compare OI
-                        </a>
-                    </li>
-                    <li>
                         <a href="{{ url_for('option_chain_view') }}"
                             class="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {% if request.endpoint == 'option_chain_view' %}bg-blue-50 dark:bg-gray-700 text-blue-700 dark:text-blue-300{% endif %}">
                             <svg class="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

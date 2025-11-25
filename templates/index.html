@@ -73,39 +73,10 @@
                 </div>
             </div>
             {% endif %}
-            <!-- Download & Analyze Card -->
-            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                        </path>
-                    </svg>
-                    Analyze Historical Data
-                </h3>
-                <form method="POST" action="{{ url_for('compare') }}" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select
-                            Date</label>
-                        <input type="date" name="date"
-                            class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to compare Yesterday vs
-                            Today</p>
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        Generate Report
-                    </button>
-                </form>
-            </div>
 
             <!-- Quick Links Card -->
-            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+            <div
+                class="md:col-span-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -144,9 +115,15 @@
         </div>
 
         <!-- Charts Row -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
             <iframe src="{{ url_for('static', filename=charts['step8_charts']) }}"
                 class="w-full h-[450px] border-0"></iframe>
+        </div>
+
+        <!-- Position Intensity Heatmap -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <iframe src="{{ url_for('static', filename=charts['position_heat']) }}"
+                class="w-full h-[550px] border-0"></iframe>
         </div>
     </div>
     {% endif %}

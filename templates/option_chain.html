@@ -3,7 +3,7 @@
 {% block title %}Option Chain - NSE Analytics{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-[95%] mx-auto">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div>
@@ -33,61 +33,129 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <table class="w-full text-sm text-center text-gray-500 dark:text-gray-400">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-center border-r dark:border-gray-600">Calls (CE)</th>
-                        <th scope="col" class="px-6 py-3 text-center border-r dark:border-gray-600">Strike</th>
-                        <th scope="col" class="px-6 py-3 text-center">Puts (PE)</th>
+                        <th colspan="6"
+                            class="px-2 py-2 border-r dark:border-gray-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                            CALLS</th>
+                        <th class="px-4 py-2 border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800">Strike</th>
+                        <th colspan="6" class="px-2 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                            PUTS</th>
                     </tr>
                 </thead>
             </table>
             <div id="optionTableContainer" class="max-h-[calc(100vh-250px)] overflow-y-auto">
-                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <table class="w-full text-sm text-center text-gray-500 dark:text-gray-400">
                     <thead
                         class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-2 text-right">OI</th>
-                            <th class="px-4 py-2 text-right">Chg OI</th>
+                            <!-- CALLS Headers -->
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%]">OI</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%]">Chng OI</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%] bg-blue-50 dark:bg-blue-900/20">
+                                Diff Chng OI</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%]">Volume</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[6%]">IV</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[6%]">LTP</th>
+
+                            <!-- Strike Header -->
                             <th
-                                class="px-4 py-2 text-center font-bold text-gray-900 dark:text-white border-l border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
-                                Strike Price</th>
-                            <th class="px-4 py-2 text-right">Chg OI</th>
-                            <th class="px-4 py-2 text-right">OI</th>
+                                class="px-4 py-2 font-bold text-gray-900 dark:text-white border-l border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800 w-[8%]">
+                                Strike</th>
+
+                            <!-- PUTS Headers -->
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[6%]">LTP</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[6%]">IV</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%]">Volume</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%] bg-blue-50 dark:bg-blue-900/20">
+                                Diff Chng OI</th>
+                            <th class="px-2 py-2 border-r dark:border-gray-600 w-[8%]">Chng OI</th>
+                            <th class="px-2 py-2 w-[8%]">OI</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in data %}
-                        <tr id="strike-{{ row['strikePrice'] }}"
-                            class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-                            {% if atm_strike and row['strikePrice'] == atm_strike %}atm-strike bg-yellow-50 dark:bg-yellow-900/20{% endif %}">
-                            <!-- CALLS -->
-                            <td class="px-4 py-2 text-right font-mono">{{ row['CE']['openInterest'] }}</td>
-                            <td
-                                class="px-4 py-2 text-right font-mono font-medium {% if row['CE']['changeinOpenInterest'] > 0 %}text-green-600 dark:text-green-400{% elif row['CE']['changeinOpenInterest'] < 0 %}text-red-600 dark:text-red-400{% endif %}">
-                                {{ row['CE']['changeinOpenInterest'] }}
+                        <tr id="strike-{{ row['strikePrice'] }}" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                            {% if atm_strike and row['strikePrice'] == atm_strike %}atm-strike{% endif %}">
+
+                            <!-- CALLS DATA -->
+                            <!-- OI -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700"
+                                style="background-color: {% if row['diffCE']['OI'] > 0 %}#86efac{% elif row['diffCE']['OI'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ row['CE']['OI'] }}
+                                <span class="text-[10px] text-gray-600 dark:text-gray-300 block">
+                                    ({{ '+' if row['diffCE']['OI'] >= 0 else '' }}{{ row['diffCE']['OI'] }})
+                                </span>
                             </td>
+                            <!-- Chng in OI -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700">
+                                {{ row['CE']['ChangeInOI'] }}
+                            </td>
+                            <!-- Diff Chng OI (NEW) -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10"
+                                style="background-color: {% if row['diffCE']['ChangeInOI'] > 0 %}#86efac{% elif row['diffCE']['ChangeInOI'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ '+' if row['diffCE']['ChangeInOI'] >= 0 else '' }}{{ row['diffCE']['ChangeInOI'] }}
+                            </td>
+                            <!-- Volume -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700"
+                                style="background-color: {% if row['diffCE']['Volume'] > 0 %}#86efac{% elif row['diffCE']['Volume'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ row['CE']['Volume'] }}
+                                <span class="text-[10px] text-gray-600 dark:text-gray-300 block">
+                                    ({{ '+' if row['diffCE']['Volume'] >= 0 else '' }}{{ row['diffCE']['Volume'] }})
+                                </span>
+                            </td>
+                            <!-- IV -->
+                            <td class="px-2 py-2 font-mono border-r dark:border-gray-700">{{ row['CE']['IV'] }}</td>
+                            <!-- LTP -->
+                            <td class="px-2 py-2 font-mono font-bold border-r dark:border-gray-700">{{ row['CE']['LTP']
+                                }}</td>
 
                             <!-- STRIKE -->
-                            <td class="px-4 py-2 text-center font-bold border-l border-r dark:border-gray-600
+                            <td class="px-4 py-2 font-bold border-l border-r dark:border-gray-600
                                 {% if atm_strike and row['strikePrice'] == atm_strike %}
                                     text-yellow-900 dark:text-yellow-200 bg-yellow-100 dark:bg-yellow-900/40 text-lg
                                 {% else %}
                                     text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50
                                 {% endif %}">
                                 {{ row['strikePrice'] }}
-                                {% if atm_strike and row['strikePrice'] == atm_strike %}
-                                <span class="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded">ATM</span>
-                                {% endif %}
                                 <span class="block text-[10px] text-gray-400 font-normal">{{ row['expiryDate'] }}</span>
+                                {% if atm_strike and row['strikePrice'] == atm_strike %}
+                                <span class="block text-[10px] bg-yellow-500 text-white px-1 rounded mt-1">ATM</span>
+                                {% endif %}
                             </td>
 
-                            <!-- PUTS -->
-                            <td
-                                class="px-4 py-2 text-right font-mono font-medium {% if row['PE']['changeinOpenInterest'] > 0 %}text-green-600 dark:text-green-400{% elif row['PE']['changeinOpenInterest'] < 0 %}text-red-600 dark:text-red-400{% endif %}">
-                                {{ row['PE']['changeinOpenInterest'] }}
+                            <!-- PUTS DATA -->
+                            <!-- LTP -->
+                            <td class="px-2 py-2 font-mono font-bold border-r dark:border-gray-700">{{ row['PE']['LTP']
+                                }}</td>
+                            <!-- IV -->
+                            <td class="px-2 py-2 font-mono border-r dark:border-gray-700">{{ row['PE']['IV'] }}</td>
+                            <!-- Volume -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700"
+                                style="background-color: {% if row['diffPE']['Volume'] > 0 %}#86efac{% elif row['diffPE']['Volume'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ row['PE']['Volume'] }}
+                                <span class="text-[10px] text-gray-600 dark:text-gray-300 block">
+                                    ({{ '+' if row['diffPE']['Volume'] >= 0 else '' }}{{ row['diffPE']['Volume'] }})
+                                </span>
                             </td>
-                            <td class="px-4 py-2 text-right font-mono">{{ row['PE']['openInterest'] }}</td>
+                            <!-- Diff Chng OI (NEW) -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10"
+                                style="background-color: {% if row['diffPE']['ChangeInOI'] > 0 %}#86efac{% elif row['diffPE']['ChangeInOI'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ '+' if row['diffPE']['ChangeInOI'] >= 0 else '' }}{{ row['diffPE']['ChangeInOI'] }}
+                            </td>
+                            <!-- Chng in OI -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white border-r dark:border-gray-700">
+                                {{ row['PE']['ChangeInOI'] }}
+                            </td>
+                            <!-- OI -->
+                            <td class="px-2 py-2 font-mono text-black dark:text-white"
+                                style="background-color: {% if row['diffPE']['OI'] > 0 %}#86efac{% elif row['diffPE']['OI'] < 0 %}#fca5a5{% else %}transparent{% endif %};">
+                                {{ row['PE']['OI'] }}
+                                <span class="text-[10px] text-gray-600 dark:text-gray-300 block">
+                                    ({{ '+' if row['diffPE']['OI'] >= 0 else '' }}{{ row['diffPE']['OI'] }})
+                                </span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -104,6 +172,7 @@
     // Auto-scroll to ATM strike on page load
     document.addEventListener('DOMContentLoaded', function () {
         if (atmStrike) {
+            // Find the first row with ATM strike
             const atmRow = document.getElementById('strike-' + atmStrike);
             if (atmRow) {
                 const container = document.getElementById('optionTableContainer');
@@ -127,9 +196,7 @@
         }
     });
 
-    // Optional: Auto-refresh every 30 seconds during market hours
-    // Uncomment if you want automatic refresh
-
+    // Auto-refresh every 30 seconds during market hours
     setInterval(function () {
         const now = new Date();
         const hours = now.getHours();
