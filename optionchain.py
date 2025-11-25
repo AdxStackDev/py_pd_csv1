@@ -1,11 +1,10 @@
 import requests
 import logging
-import json
-import os
+from storage import storage
 
 NSE_OPTION_CHAIN_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
 NSE_HOME_URL = "https://www.nseindia.com"
-DATA_FILE = "data/option_chain_state.json"
+STORAGE_KEY = "option_chain_state"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -15,23 +14,17 @@ headers = {
 }
 
 def load_previous_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            logging.error(f"Error loading previous data: {e}")
-    return {}
+    """Load previous option chain data from storage (Redis or in-memory)."""
+    data = storage.get_json(STORAGE_KEY)
+    return data if data else {}
 
 def save_current_data(data):
-    try:
-        os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-        with open(DATA_FILE, "w") as f:
-            json.dump(data, f)
-    except Exception as e:
-        logging.error(f"Error saving current data: {e}")
+    """Save current option chain data to storage (Redis or in-memory)."""
+    # Store with 24 hour expiration
+    storage.set_json(STORAGE_KEY, data, ex=86400)
 
 def fetch_raw_data():
+    """Fetch raw option chain data from NSE."""
     session = requests.Session()
     session.headers.update(headers)
     try:
@@ -46,6 +39,10 @@ def fetch_raw_data():
         return None
 
 def get_option_chain_data():
+    """
+    Fetch and process option chain data with difference tracking.
+    Returns: (processed_rows, spot_price, atm_strike)
+    """
     raw_data = fetch_raw_data()
     previous_data = load_previous_data()
     
@@ -65,7 +62,7 @@ def get_option_chain_data():
     atm_strike = int(round(spot_price / 50) * 50) if spot_price else None
 
     processed_rows = []
-    new_session_data = previous_data.copy() # Start with existing data to preserve other strikes if needed
+    new_session_data = previous_data.copy()  # Start with existing data to preserve other strikes if needed
 
     for item in filtered_data:
         strike = item["strikePrice"]

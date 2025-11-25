@@ -32,8 +32,18 @@ BASE_URL = "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_{}
 NSE_OPTION_CHAIN_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
 NSE_HOME_URL = "https://www.nseindia.com"
 
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
+# Create directories (will fail silently on Vercel's read-only filesystem)
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(STATIC_DIR, exist_ok=True)
+except (OSError, PermissionError) as e:
+    logging.warning(f"Could not create directories (read-only filesystem): {e}")
+
+# Helper function to detect Vercel environment
+def is_vercel():
+    """Check if running on Vercel."""
+    return os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
+
 
 # Predefined NSE holidays
 NSE_HOLIDAYS = {
