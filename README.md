@@ -1,6 +1,6 @@
 <div align="center">
 
-![NSE Analytics Hero](assets/hero.png)
+<!-- ![NSE Analytics Hero](assets/hero.png) -->
 
 # 📈 NSE F&O Analytics Dashboard
 
