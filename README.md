@@ -1,4 +1,5 @@
 <div align="center">
+<img src="assets/disclaimer.png" width="800" alt="Disclaimer" style="border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
 
 <!-- ![NSE Analytics Hero](assets/hero.png) -->
 
@@ -14,7 +15,7 @@
   <b>Real-time Futures & Options Analysis | Institutional Sentiment Tracking | Live Option Chain</b>
 </p>
 
-[Live Demo 🚀](https://adxnse.vercel.app/) • [Report Bug 🐛](https://github.com/AdxStackDev/py_pd_csv1/issues) • [Request Feature ✨](https://github.com/AdxStackDev/py_pd_csv1/issues)
+[Live Demo 🚀](https://adxnse.vercel.app/) • [Report Bug 🐛](https://github.com/AdxStackDev/py_pd_csv1/issues)
 
 </div>
 
@@ -68,10 +69,6 @@
 
 ### 📉 Net Sentiment
 <img src="assets/net_sentiment.png" width="800" alt="Net Sentiment" style="border-radius: 10px; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-
-### ⚠️ Disclaimer
-<img src="assets/disclaimer.png" width="800" alt="Disclaimer" style="border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-
 </div>
 
 ---
@@ -164,8 +161,6 @@ python app.py
 Access the dashboard at `http://localhost:5001`
 
 ---
-
-## 👨‍💻 Developer
 
 <div align="center">
 
