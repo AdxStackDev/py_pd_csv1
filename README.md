@@ -171,9 +171,6 @@ Access the dashboard at `http://localhost:5001`
 
 **Created with ❤️ by [Aditya (AdxStackDev)](https://github.com/AdxStackDev)**
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AdxStackDev)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/your-profile)
-
 </div>
 
 ---
