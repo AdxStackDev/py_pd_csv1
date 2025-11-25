@@ -105,25 +105,21 @@
         <!-- Tables Row -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                <iframe src="{{ url_for('static', filename=charts['step8_table1']) }}"
-                    class="w-full h-[350px] border-0"></iframe>
+                {{ charts['step8_table1'] | safe }}
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                <iframe src="{{ url_for('static', filename=charts['step8_table2']) }}"
-                    class="w-full h-[350px] border-0"></iframe>
+                {{ charts['step8_table2'] | safe }}
             </div>
         </div>
 
         <!-- Charts Row -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-            <iframe src="{{ url_for('static', filename=charts['step8_charts']) }}"
-                class="w-full h-[450px] border-0"></iframe>
+            {{ charts['step8_charts'] | safe }}
         </div>
 
         <!-- Position Intensity Heatmap -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <iframe src="{{ url_for('static', filename=charts['position_heat']) }}"
-                class="w-full h-[550px] border-0"></iframe>
+            {{ charts['position_heat'] | safe }}
         </div>
     </div>
     {% endif %}

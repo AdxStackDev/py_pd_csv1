@@ -26,24 +26,17 @@ logging.basicConfig(
 # ====================================================
 # 📁 Config
 # ====================================================
-DATA_DIR = "data"
-STATIC_DIR = "static"
 BASE_URL = "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_{}.csv"
 NSE_OPTION_CHAIN_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
 NSE_HOME_URL = "https://www.nseindia.com"
 
-# Create directories (will fail silently on Vercel's read-only filesystem)
-try:
-    os.makedirs(DATA_DIR, exist_ok=True)
-    os.makedirs(STATIC_DIR, exist_ok=True)
-except (OSError, PermissionError) as e:
-    logging.warning(f"Could not create directories (read-only filesystem): {e}")
+# In-memory cache for CSV data (Vercel-compatible)
+_csv_cache = {}
 
 # Helper function to detect Vercel environment
 def is_vercel():
     """Check if running on Vercel."""
     return os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
-
 
 # Predefined NSE holidays
 NSE_HOLIDAYS = {
@@ -70,13 +63,12 @@ def adjust_for_holidays(date: datetime.date) -> datetime.date:
     return date
 
 def download_csv(date: datetime.date) -> str:
-    """Download NSE OI CSV file for a given date."""
+    """Download NSE OI CSV file for a given date and cache in memory."""
     date_str = get_date_string(date)
-    file_path = os.path.join(DATA_DIR, f"{date_str}.csv")
-
-    if os.path.exists(file_path):
-        # logging.info(f"Using cached file: {file_path}")
-        return file_path
+    
+    # Check in-memory cache first
+    if date_str in _csv_cache:
+        return _csv_cache[date_str]
 
     url = BASE_URL.format(date_str)
     headers = {
@@ -88,10 +80,10 @@ def download_csv(date: datetime.date) -> str:
     try:
         response = requests.get(url, headers=headers, timeout=10)
         if response.ok:
-            with open(file_path, "wb") as f:
-                f.write(response.content)
-            logging.info(f"✅ Downloaded {file_path}")
-            return file_path
+            # Store in memory cache
+            _csv_cache[date_str] = response.text
+            logging.info(f"✅ Downloaded and cached data for {date_str}")
+            return response.text
         else:
             logging.warning(f"Failed to download {url}: {response.status_code}")
             return None
@@ -105,9 +97,9 @@ def download_csv(date: datetime.date) -> str:
 # 📊 Data Processing Functions
 # ====================================================
 def load_data(date: datetime.date) -> pd.DataFrame:
-    """Load OI data for a single date."""
-    file_path = download_csv(date)
-    if not file_path:
+    """Load OI data for a single date from memory cache."""
+    csv_content = download_csv(date)
+    if not csv_content:
         return None
     
     # Base columns (always present)
@@ -121,15 +113,18 @@ def load_data(date: datetime.date) -> pd.DataFrame:
     stock_cols = ["Future Stock Long", "Future Stock Short"]
     
     try:
+        # Read CSV from string content
+        from io import StringIO
         # Try to load with all columns including stock columns
-        df = pd.read_csv(file_path, skiprows=1, usecols=base_cols + stock_cols)
+        df = pd.read_csv(StringIO(csv_content), skiprows=1, usecols=base_cols + stock_cols)
     except ValueError:
         # If stock columns don't exist, load without them and add as zeros
-        df = pd.read_csv(file_path, skiprows=1, usecols=base_cols)
+        from io import StringIO
+        df = pd.read_csv(StringIO(csv_content), skiprows=1, usecols=base_cols)
         df["Future Stock Long"] = 0
         df["Future Stock Short"] = 0
     except Exception as e:
-        logging.error(f"Error reading CSV {file_path}: {e}")
+        logging.error(f"Error reading CSV data: {e}")
         return None
     
     return df.dropna()
@@ -301,7 +296,7 @@ def get_latest_activity_data():
 # 📈 Chart Generation (Advanced)
 # ====================================================
 def generate_advanced_charts(current_date: datetime.date):
-    """Generate all charts for the 7-step analysis."""
+    """Generate all charts for the 7-step analysis. Returns dict of HTML strings."""
     
     # 1. Fetch Data (Current vs Previous for Change, and Last 5 Days for Trend)
     data_map = fetch_last_n_days_data(current_date, n=5)
@@ -331,15 +326,13 @@ def generate_advanced_charts(current_date: datetime.date):
     for col in ["Option Index Call Long", "Option Index Put Long"]:
         fig_raw.add_trace(go.Bar(x=today_df["Client Type"], y=today_df[col], name=col))
     fig_raw.update_layout(title="Raw Call vs Put OI", barmode='group', **layout_args)
-    fig_raw.write_html(os.path.join(STATIC_DIR, "step1_raw_bar.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step1_raw'] = "step1_raw_bar.html"
+    charts['step1_raw'] = fig_raw.to_html(include_plotlyjs='cdn', full_html=False)
 
     # Donut Chart: Share of Total OI
     total_oi = today_df[["Option Index Call Long", "Option Index Put Long"]].sum(axis=1)
     fig_donut = px.pie(values=total_oi, names=today_df["Client Type"], title="Participant Market Share", hole=0.4)
     fig_donut.update_layout(**layout_args)
-    fig_donut.write_html(os.path.join(STATIC_DIR, "step1_donut.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step1_donut'] = "step1_donut.html"
+    charts['step1_donut'] = fig_donut.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 2: Call-Put Difference Analysis ---
     # Horizontal Bar: Net Diff
@@ -347,16 +340,14 @@ def generate_advanced_charts(current_date: datetime.date):
                       title="Net Sentiment (Call Diff - Put Diff)", color="Net Sentiment",
                       color_continuous_scale=px.colors.diverging.RdBu)
     fig_hbar.update_layout(**layout_args)
-    fig_hbar.write_html(os.path.join(STATIC_DIR, "step2_hbar.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step2_hbar'] = "step2_hbar.html"
+    charts['step2_hbar'] = fig_hbar.to_html(include_plotlyjs='cdn', full_html=False)
 
     # Stacked Bar: Call Diff vs Put Diff
     fig_stack = go.Figure()
     fig_stack.add_trace(go.Bar(x=today_df["Client Type"], y=today_df["Call Diff"], name="Net Call"))
     fig_stack.add_trace(go.Bar(x=today_df["Client Type"], y=today_df["Put Diff"], name="Net Put"))
     fig_stack.update_layout(title="Net Call vs Net Put Exposure", barmode='relative', **layout_args)
-    fig_stack.write_html(os.path.join(STATIC_DIR, "step2_stack.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step2_stack'] = "step2_stack.html"
+    charts['step2_stack'] = fig_stack.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 3: Total Market Call-Put Difference ---
     # Column Chart
@@ -365,8 +356,7 @@ def generate_advanced_charts(current_date: datetime.date):
     fig_mkt = go.Figure(data=[go.Bar(x=["Total Calls", "Total Puts"], y=[total_calls, total_puts], 
                                      marker_color=['#10B981', '#EF4444'])])
     fig_mkt.update_layout(title="Total Market Open Interest", **layout_args)
-    fig_mkt.write_html(os.path.join(STATIC_DIR, "step3_col.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step3_col'] = "step3_col.html"
+    charts['step3_col'] = fig_mkt.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 4: FII & Pro Specific ---
     # Radar Chart
@@ -378,8 +368,7 @@ def generate_advanced_charts(current_date: datetime.date):
             values = client_data[categories].values.flatten().tolist()
             fig_radar.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name=client))
     fig_radar.update_layout(title="FII vs PRO Positioning", polar=dict(radialaxis=dict(visible=True)), **layout_args)
-    fig_radar.write_html(os.path.join(STATIC_DIR, "step4_radar.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step4_radar'] = "step4_radar.html"
+    charts['step4_radar'] = fig_radar.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 5: Trend Analysis Over Time ---
     # Line Chart
@@ -398,8 +387,7 @@ def generate_advanced_charts(current_date: datetime.date):
     trend_df = pd.DataFrame(trend_data)
     fig_trend = px.line(trend_df, x="Date", y="Net Sentiment", color="Client", markers=True, title="5-Day Net Sentiment Trend")
     fig_trend.update_layout(**layout_args)
-    fig_trend.write_html(os.path.join(STATIC_DIR, "step5_trend.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step5_trend'] = "step5_trend.html"
+    charts['step5_trend'] = fig_trend.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 6: Advanced Combinational Visualization ---
     # Scatter Plot: Net Sentiment vs Change in OI
@@ -413,8 +401,7 @@ def generate_advanced_charts(current_date: datetime.date):
     fig_scatter.add_vline(x=0, line_dash="dash", line_color="gray")
     fig_scatter.add_hline(y=0, line_dash="dash", line_color="gray")
     fig_scatter.update_layout(**layout_args)
-    fig_scatter.write_html(os.path.join(STATIC_DIR, "step6_scatter.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step6_scatter'] = "step6_scatter.html"
+    charts['step6_scatter'] = fig_scatter.to_html(include_plotlyjs='cdn', full_html=False)
 
     # Heatmap: Participant vs Position Type Intensity
     # Normalize data for heatmap
@@ -422,8 +409,7 @@ def generate_advanced_charts(current_date: datetime.date):
     fig_heat = px.imshow(heatmap_data, text_auto=True, aspect="auto", title="Position Intensity Heatmap",
                          color_continuous_scale="Viridis")
     fig_heat.update_layout(**layout_args)
-    fig_heat.write_html(os.path.join(STATIC_DIR, "step6_heat.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step6_heat'] = "step6_heat.html"
+    charts['step6_heat'] = fig_heat.to_html(include_plotlyjs='cdn', full_html=False)
 
     # --- Step 8: Requested Custom Tables & Charts ---
     # Prepare Data with TOTAL row
@@ -446,8 +432,7 @@ def generate_advanced_charts(current_date: datetime.date):
                    align='center', font=dict(color='black', size=11))
     )])
     fig_tbl1.update_layout(title="Call & Put Diff per Client", margin=dict(l=0, r=0, t=30, b=0))
-    fig_tbl1.write_html(os.path.join(STATIC_DIR, "step8_table1.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step8_table1'] = "step8_table1.html"
+    charts['step8_table1'] = fig_tbl1.to_html(include_plotlyjs='cdn', full_html=False)
 
     # 2. Table: Net Sentiment
     fig_tbl2 = go.Figure(data=[go.Table(
@@ -458,8 +443,7 @@ def generate_advanced_charts(current_date: datetime.date):
                    align='center', font=dict(color='black', size=11))
     )])
     fig_tbl2.update_layout(title="Net Sentiment Diff", margin=dict(l=0, r=0, t=30, b=0))
-    fig_tbl2.write_html(os.path.join(STATIC_DIR, "step8_table2.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step8_table2'] = "step8_table2.html"
+    charts['step8_table2'] = fig_tbl2.to_html(include_plotlyjs='cdn', full_html=False)
 
     # 3. Charts: Side-by-Side Diff Bars
     fig_sb = make_subplots(rows=1, cols=2, subplot_titles=("Call Diff", "Put Diff"))
@@ -473,8 +457,7 @@ def generate_advanced_charts(current_date: datetime.date):
     fig_sb.add_trace(go.Bar(x=step8_df["Client Type"], y=step8_df["Put Diff"], marker_color=colors_put, name="Put Diff"), row=1, col=2)
 
     fig_sb.update_layout(title="Call & Put Diff per Client Type", showlegend=False, **layout_args)
-    fig_sb.write_html(os.path.join(STATIC_DIR, "step8_charts.html"), include_plotlyjs='cdn', full_html=False)
-    charts['step8_charts'] = "step8_charts.html"
+    charts['step8_charts'] = fig_sb.to_html(include_plotlyjs='cdn', full_html=False)
 
     # ============================================
     # 6. Position Intensity Heatmap (Moved from Compare)
@@ -498,8 +481,7 @@ def generate_advanced_charts(current_date: datetime.date):
         **layout_args,
         height=500
     )
-    fig_heat.write_html(os.path.join(STATIC_DIR, "position_heat.html"), include_plotlyjs='cdn', full_html=False)
-    charts['position_heat'] = "position_heat.html"
+    charts['position_heat'] = fig_heat.to_html(include_plotlyjs='cdn', full_html=False)
 
     return charts
 
