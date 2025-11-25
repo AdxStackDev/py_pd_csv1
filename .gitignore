@@ -39,3 +39,4 @@ static/*.html
 app.log
 .env
 .vercel
+.idea/
