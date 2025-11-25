@@ -15,7 +15,7 @@
   <b>Real-time Futures & Options Analysis | Institutional Sentiment Tracking | Live Option Chain</b>
 </p>
 
-[Live Demo 🚀](https://adxnse.vercel.app/) • [Report Bug 🐛](https://github.com/AdxStackDev/py_pd_csv1/issues)
+• <a href="https://adxnse.vercel.app/" target="_blank">Live Demo 🚀</a> • [Report Bug 🐛](https://github.com/AdxStackDev/py_pd_csv1/issues)
 
 </div>
 
