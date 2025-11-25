@@ -36,6 +36,8 @@ instance/
 # Project Specific
 data/
 static/*.html
+static/*.png
+static/*.pdf
 app.log
 .env
 .vercel
