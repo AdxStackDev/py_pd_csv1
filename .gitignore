@@ -41,7 +41,6 @@ static/*.pdf
 oidata_backup.py
 download_oi_data.py
 focused_charts.py
-storage.py
 app.log
 .env
 .vercel
